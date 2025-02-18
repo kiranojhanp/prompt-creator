@@ -1,4 +1,8 @@
-import { useState } from "react"
+"use client";
+
+import { useAtom } from "jotai";
+import { useState } from "react";
+import { ignoreFileSuffixesAtom, ignoreFoldersAtom } from "@/atoms/promptAtoms";
 import {
   Dialog,
   DialogContent,
@@ -6,91 +10,112 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface ImportOptionsDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  onConfirm: (options: ImportOptions) => void
-  importType: "file" | "folder"
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (options: {
+    ignoreFileSuffixes?: string[];
+    ignoreFolders?: string[];
+  }) => void;
+  importType: "file" | "folder";
 }
 
-interface ImportOptions {
-  includeSubfolders: boolean
-  ignoreSuffixes: string
-  ignoreFolders: string
-}
+export const ImportOptionsDialog = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  importType,
+}: ImportOptionsDialogProps) => {
+  const [ignoreFileSuffixes, setIgnoreFileSuffixes] = useAtom(
+    ignoreFileSuffixesAtom
+  );
+  const [ignoreFolders, setIgnoreFolders] = useAtom(ignoreFoldersAtom);
 
-export function ImportOptionsDialog({ isOpen, onClose, onConfirm, importType }: ImportOptionsDialogProps) {
-  const [options, setOptions] = useState<ImportOptions>({
-    includeSubfolders: true,
-    ignoreSuffixes: "",
-    ignoreFolders: "",
-  })
+  // Local state for text inputs (comma-separated values)
+  const [localSuffixes, setLocalSuffixes] = useState(
+    ignoreFileSuffixes.join(",")
+  );
+  const [localFolders, setLocalFolders] = useState(ignoreFolders.join(","));
 
   const handleConfirm = () => {
-    onConfirm(options)
-    onClose()
-  }
+    if (importType === "folder") {
+      const newSuffixes = localSuffixes
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const newFolders = localFolders
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      // Update atoms so they persist for future dialogs
+      setIgnoreFileSuffixes(newSuffixes);
+      setIgnoreFolders(newFolders);
+      onConfirm({ ignoreFileSuffixes: newSuffixes, ignoreFolders: newFolders });
+    } else {
+      // For file imports, simply confirm without options
+      onConfirm({});
+    }
+  };
+
+  if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] bg-gray-800 text-white">
+      <DialogContent className="bg-gray-800 text-white">
         <DialogHeader>
-          <DialogTitle>Import Options - {importType === "file" ? "Files" : "Folder"}</DialogTitle>
-          <DialogDescription>
-            Configure your {importType} import settings. Media files, binary files, and files larger than 500KB are
-            automatically ignored.
+          <DialogTitle>Import Options</DialogTitle>
+          <DialogDescription className="text-gray-400">
+            {importType === "folder"
+              ? `Configure your ${importType} import settings. Media files, binary files, and files larger than 500KB are automatically ignored.`
+              : "Confirm file import."}
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          {importType === "folder" && (
-            <div className="flex items-center space-x-2">
+
+        {importType === "folder" && (
+          <div className="flex flex-col gap-4 my-4">
+            <div>
+              <label className="block text-sm font-medium ">
+                Ignore File Suffixes
+              </label>
               <input
-                type="checkbox"
-                id="includeSubfolders"
-                checked={options.includeSubfolders}
-                onChange={(e) => setOptions({ ...options, includeSubfolders: e.target.checked })}
-                className="w-4 h-4"
+                type="text"
+                value={localSuffixes}
+                onChange={(e) => setLocalSuffixes(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-4 text-xs text-gray-950"
+                placeholder=".env, .log, .gitignore, ..."
               />
-              <Label htmlFor="includeSubfolders">Include files in sub-folders</Label>
+              <p className="text-xs text-gray-400">
+                Comma-separated list of file suffixes to ignore.
+              </p>
             </div>
-          )}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="ignoreSuffixes" className="text-right">
-              Ignore suffixes
-            </Label>
-            <Input
-              id="ignoreSuffixes"
-              value={options.ignoreSuffixes}
-              onChange={(e) => setOptions({ ...options, ignoreSuffixes: e.target.value })}
-              placeholder="e.g., .min.js, .test.js"
-              className="col-span-3 bg-gray-700"
-            />
+            <div>
+              <label className="block text-sm font-medium ">
+                Ignore Folders
+              </label>
+              <input
+                type="text"
+                value={localFolders}
+                onChange={(e) => setLocalFolders(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 px-4 text-xs text-gray-950"
+                placeholder=".git/, node_modules/, venv/, ..."
+              />
+              <p className="text-xs text-gray-400">
+                Comma-separated list of folder names to ignore.
+              </p>
+            </div>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="ignoreFolders" className="text-right">
-              Ignore folders
-            </Label>
-            <Input
-              id="ignoreFolders"
-              value={options.ignoreFolders}
-              onChange={(e) => setOptions({ ...options, ignoreFolders: e.target.value })}
-              placeholder="e.g., node_modules, dist"
-              className="col-span-3 bg-gray-700"
-            />
-          </div>
-        </div>
+        )}
+
         <DialogFooter>
-          <Button type="submit" onClick={handleConfirm}>
-            Confirm
+          <Button onClick={handleConfirm}>Confirm</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
-}
-
+  );
+};

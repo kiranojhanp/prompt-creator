@@ -1,12 +1,18 @@
 import { atom } from "jotai";
-import { taskTypeValues, customInstructionValues } from "./data";
+import { atomWithStorage } from "jotai/utils";
+import {
+  taskTypeValues,
+  customInstructionValues,
+  ignoreFoldersData,
+  ignoreFileSuffixesData,
+} from "./data";
 import type { FileType } from "@/types";
 
 export const filesAtom = atom<FileType[]>([]);
 export const selectedFilesAtom = atom<string[]>([]);
-export const taskTypeAtom = atom("Feature");
-export const customInstructionsAtom = atom("Default");
-export const rawPromptAtom = atom<string>("");
+export const taskTypeAtom = atomWithStorage("taskType", "");
+export const customInstructionsAtom = atomWithStorage("customInstructions", "");
+export const rawPromptAtom = atomWithStorage<string>("rawPrompt", "");
 export const tokenCountAtom = atom<number>(0);
 export const tokenLimitAtom = atom<number>(200);
 export const usageQuotaAtom = atom<number>(6);
@@ -16,6 +22,9 @@ export const isMenuOpenAtom = atom<boolean>(false);
 export const totalLOCAtom = atom<number>(0);
 export const isMobileAtom = atom<boolean>(false);
 export const showFilePanelAtom = atom<boolean>(true);
+
+export const ignoreFileSuffixesAtom = atom<string[]>(ignoreFileSuffixesData);
+export const ignoreFoldersAtom = atom<string[]>(ignoreFoldersData);
 
 // Derived atom for final prompt
 export const finalPromptAtom = atom((get) => {

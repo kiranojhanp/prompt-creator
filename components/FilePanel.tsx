@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, type ChangeEvent, type DragEvent, useState } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { useAtom } from "jotai";
-import { ChevronDown, FileText, Folder } from "lucide-react";
+import { useDropzone } from "react-dropzone";
+import { ChevronDown, FileText, Folder, Upload } from "lucide-react";
 import {
   filesAtom,
   selectedFilesAtom,
@@ -14,8 +15,10 @@ import type { FileType } from "@/types";
 import { ImportOptionsDialog } from "./ImportOptionsDialog";
 import { Button } from "@/components/ui/button";
 import { customInstructionTypes, taskTypes } from "@/atoms/data";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const FilePanel = () => {
+  // State management via Jotai
   const [files, setFiles] = useAtom(filesAtom);
   const [selectedFiles, setSelectedFiles] = useAtom(selectedFilesAtom);
   const [taskType, setTaskType] = useAtom(taskTypeAtom);
@@ -24,25 +27,41 @@ const FilePanel = () => {
   );
   const [, setTotalLOC] = useAtom(totalLOCAtom);
 
+  // Local state for import workflow and errors
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [importType, setImportType] = useState<"file" | "folder">("file");
   const [filesToImport, setFilesToImport] = useState<File[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Refs for file & folder inputs
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      setImportType("file");
-      setFilesToImport(Array.from(event.target.files));
-      setIsImportDialogOpen(true);
+  // Handler for file input selection
+  const handleFileSelect = async (event: ChangeEvent<HTMLInputElement>) => {
+    try {
+      if (event.target.files && event.target.files.length > 0) {
+        setImportType("file");
+        const validFiles = Array.from(event.target.files).filter(
+          (file) => file.size < 10 * 1024 * 1024 // 10MB limit
+        );
+        if (validFiles.length !== event.target.files.length) {
+          setUploadError("Some files were skipped due to size limitations");
+        }
+        setFilesToImport(validFiles);
+        setIsImportDialogOpen(true);
+      }
+    } catch (error) {
+      setUploadError("Error processing files. Please try again.");
     }
   };
 
+  // Trigger folder selection
   const handleFolderSelect = () => {
-    if (folderInputRef.current) {
-      folderInputRef.current.click();
-    }
+    folderInputRef.current?.click();
   };
 
+  // Handler for folder input selection
   const handleFolderChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       setImportType("folder");
@@ -51,58 +70,52 @@ const FilePanel = () => {
     }
   };
 
-  const handleImportConfirm = async (options: any) => {
-    const newFiles: FileType[] = await Promise.all(
-      filesToImport.map(async (file) => {
-        const content = await file.text();
-        const loc = content.split("\n").length;
-        return {
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          content: content,
-          loc: loc,
-          extension: file.name.split(".").pop() || "",
-        };
-      })
-    );
-
-    setFiles((prevFiles) => [...prevFiles, ...newFiles]);
-    calculateTotalLOC([...files, ...newFiles], selectedFiles);
-    setFilesToImport([]);
-  };
-
-  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.currentTarget.classList.add("border-blue-500");
-  };
-
-  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.currentTarget.classList.remove("border-blue-500");
-  };
-
-  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.currentTarget.classList.remove("border-blue-500");
-    if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+  // Handler for drag-and-drop events
+  const handleDrop = async (acceptedFiles: File[]) => {
+    try {
+      const validFiles = acceptedFiles.filter(
+        (file) => file.size < 10 * 1024 * 1024
+      );
+      if (validFiles.length !== acceptedFiles.length) {
+        setUploadError("Some files were skipped due to size limitations");
+      }
       setImportType("file");
-      setFilesToImport(Array.from(event.dataTransfer.files));
+      setFilesToImport(validFiles);
       setIsImportDialogOpen(true);
+    } catch (error) {
+      setUploadError("Error processing dropped files. Please try again.");
     }
   };
 
-  const toggleFileSelection = (file: FileType) => {
-    let newSelection;
-    if (selectedFiles.includes(file.name)) {
-      newSelection = selectedFiles.filter((f) => f !== file.name);
-    } else {
-      newSelection = [...selectedFiles, file.name];
+  // Process files after confirming import options
+  const handleImportConfirm = async (options: any) => {
+    try {
+      setUploadError(null);
+      const newFiles: FileType[] = await Promise.all(
+        filesToImport.map(async (file) => {
+          const content = await file.text();
+          const loc = content.split("\n").length;
+          return {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            content,
+            loc,
+            extension: file.name.split(".").pop() || "",
+          };
+        })
+      );
+      const updatedFiles = [...files, ...newFiles];
+      setFiles(updatedFiles);
+      calculateTotalLOC(updatedFiles, selectedFiles);
+      setFilesToImport([]);
+      setIsImportDialogOpen(false);
+    } catch (error) {
+      setUploadError("Error importing files. Please try again.");
     }
-    setSelectedFiles(newSelection);
-    calculateTotalLOC(files, newSelection);
   };
 
+  // Recalculate total LOC based on selected files
   const calculateTotalLOC = (filesList: FileType[], selection: string[]) => {
     const loc = filesList
       .filter((file) => selection.includes(file.name))
@@ -110,16 +123,72 @@ const FilePanel = () => {
     setTotalLOC(loc);
   };
 
+  // Toggle file selection when checkbox is clicked
+  const toggleFileSelection = (file: FileType) => {
+    const newSelection = selectedFiles.includes(file.name)
+      ? selectedFiles.filter((f) => f !== file.name)
+      : [...selectedFiles, file.name];
+    setSelectedFiles(newSelection);
+    calculateTotalLOC(files, newSelection);
+  };
+
+  // Setup dropzone; using noClick to prevent clicks inside from triggering the file dialog
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: handleDrop,
+    noClick: true,
+  });
+
+  // Reusable button group for file/folder upload
+  const renderUploadButtons = () => (
+    <div className="flex gap-2">
+      <Button
+        onClick={() => fileInputRef.current?.click()}
+        className="flex items-center gap-2"
+        variant="ghost"
+      >
+        <FileText size={14} />
+        Add File
+      </Button>
+      <Button
+        onClick={handleFolderSelect}
+        className="flex items-center gap-2"
+        variant="ghost"
+      >
+        <Folder size={14} />
+        Add Folder
+      </Button>
+      <input
+        ref={fileInputRef}
+        id="file-input"
+        type="file"
+        multiple
+        className="hidden"
+        onChange={handleFileSelect}
+        accept=".js,.jsx,.ts,.tsx,.css,.html,.json,.md"
+      />
+      <input
+        ref={folderInputRef}
+        type="file"
+        //@ts-ignore
+        directory=""
+        webkitdirectory=""
+        multiple
+        className="hidden"
+        onChange={handleFolderChange}
+      />
+    </div>
+  );
+
   return (
     <div className="p-4 flex flex-col h-full overflow-hidden bg-gray-900 text-white">
-      {/* Task Type */}
+      {/* Task Type Section */}
       <div className="mb-4">
         <h2 className="text-lg mb-2">Task Type</h2>
         <div className="relative">
           <select
             value={taskType}
             onChange={(e) => setTaskType(e.target.value)}
-            className="bg-gray-800 p-2 rounded w-full text-white appearance-none"
+            className="bg-gray-800 p-2 rounded w-full text-white appearance-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
           >
             {taskTypes.map((type) => (
               <option key={type} value={type}>
@@ -134,14 +203,14 @@ const FilePanel = () => {
         </div>
       </div>
 
-      {/* Custom Instructions */}
+      {/* Custom Instructions Section */}
       <div className="mb-4">
         <h2 className="text-lg mb-2">Custom Instructions</h2>
         <div className="relative">
           <select
             value={customInstructions}
             onChange={(e) => setCustomInstructions(e.target.value)}
-            className="bg-gray-800 p-2 rounded w-full text-white appearance-none"
+            className="bg-gray-800 p-2 rounded w-full text-white appearance-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
           >
             {customInstructionTypes.map((type) => (
               <option key={type} value={type}>
@@ -156,86 +225,73 @@ const FilePanel = () => {
         </div>
       </div>
 
-      {/* Code Context */}
+      {/* Code Context & File Upload Area */}
       <div className="flex-grow flex flex-col overflow-hidden">
         <h2 className="text-lg mb-2">Code Context</h2>
 
-        {/* File List / Drop Area */}
+        {uploadError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{uploadError}</AlertDescription>
+          </Alert>
+        )}
+
         <div
-          className="border border-dashed border-gray-700 rounded flex-grow overflow-auto"
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
+          {...getRootProps()}
+          className={`border border-dashed rounded flex-grow overflow-auto transition-colors ${
+            isDragActive
+              ? "border-blue-500 bg-blue-500/10"
+              : "border-gray-700 hover:border-gray-600"
+          }`}
         >
+          <input {...getInputProps()} />
+
           {files.length > 0 ? (
-            <ul className="divide-y divide-gray-800">
-              {files.map((file, idx) => (
-                <li
-                  key={idx}
-                  className="flex items-center p-2 hover:bg-gray-800 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedFiles.includes(file.name)}
-                    onChange={() => toggleFileSelection(file)}
-                    className="w-4 h-4 mr-2"
-                  />
-                  <FileText size={14} className="mr-2 text-gray-400" />
-                  <span className="truncate flex-1">{file.name}</span>
-                  <span className="text-gray-400 text-xs">{file.loc} LOC</span>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className="divide-y divide-gray-800">
+                {files.map((file, idx) => (
+                  <li
+                    key={idx}
+                    className="flex items-center p-2 hover:bg-gray-800 text-sm group"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedFiles.includes(file.name)}
+                      onChange={() => toggleFileSelection(file)}
+                      onClick={(e) => e.stopPropagation()} // Prevent dropzone click propagation
+                      className="w-4 h-4 mr-2 rounded border-gray-600 text-blue-500 focus:ring-blue-500"
+                    />
+                    <FileText size={14} className="mr-2 text-gray-400" />
+                    <span className="truncate flex-1">{file.name}</span>
+                    <span className="text-gray-400 text-xs">
+                      {file.loc} LOC
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              {/* Display upload buttons below the file list */}
+              <div className="p-4 flex justify-center">
+                {renderUploadButtons()}
+              </div>
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-gray-400 text-xs md:text-sm p-4">
-              <p className="mb-4 text-center">
-                Drag and drop files or folders here
-              </p>
+              <Upload size={24} className="mb-4 text-gray-500" />
+              <p className="mb-4 text-center">Drag and drop files here</p>
               <p className="mb-2">Or</p>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => document.getElementById("file-input")!.click()}
-                  className="flex items-center gap-2"
-                  variant="ghost"
-                >
-                  <FileText size={14} />
-                  Add File
-                </Button>
-                <input
-                  id="file-input"
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={handleFileSelect}
-                />
-                <Button
-                  onClick={handleFolderSelect}
-                  className="flex items-center gap-2"
-                  variant="ghost"
-                >
-                  <Folder size={14} />
-                  Add Folder
-                </Button>
-                <input
-                  ref={folderInputRef}
-                  type="file"
-                  //@ts-ignore
-                  directory="true"
-                  mozdirectory="true"
-                  webkitdirectory="true"
-                  multiple
-                  className="hidden"
-                  onChange={handleFolderChange}
-                />
-              </div>
+              {renderUploadButtons()}
             </div>
           )}
         </div>
       </div>
 
+      {/* Import Options Dialog */}
       <ImportOptionsDialog
         isOpen={isImportDialogOpen}
-        onClose={() => setIsImportDialogOpen(false)}
+        onClose={() => {
+          setIsImportDialogOpen(false);
+          setFilesToImport([]);
+          setUploadError(null);
+        }}
         onConfirm={handleImportConfirm}
         importType={importType}
       />

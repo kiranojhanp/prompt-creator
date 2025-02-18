@@ -1,5 +1,6 @@
 export const taskTypeValues: Record<string, string> = {
   Feature: `<task-title>Develop new functionality</task-title>
+
 <context>
 - Implement using established patterns
 - Maintain strict type safety
@@ -9,6 +10,7 @@ export const taskTypeValues: Record<string, string> = {
 </context>`,
 
   Fix: `<task-title>Resolve software defect</task-title>
+
 <context>
 - Analyze root cause
 - Verify fix across edge cases
@@ -18,6 +20,7 @@ export const taskTypeValues: Record<string, string> = {
 </context>`,
 
   Refactor: `<task-title>Improve code structure</task-title>
+
 <context>
 - Maintain existing behavior
 - Enhance maintainability
@@ -27,6 +30,7 @@ export const taskTypeValues: Record<string, string> = {
 </context>`,
 
   Performance: `<task-title>Optimize performance</task-title>
+
 <context>
 - Profile current behavior
 - Identify bottlenecks
@@ -36,6 +40,7 @@ export const taskTypeValues: Record<string, string> = {
 </context>`,
 
   Security: `<task-title>Enhance security</task-title>
+
 <context>
 - Follow security best practices
 - Analyze attack vectors
@@ -45,6 +50,7 @@ export const taskTypeValues: Record<string, string> = {
 </context>`,
 
   Migration: `<task-title>Migrate codebase</task-title>
+
 <context>
 - Plan migration strategy
 - Handle compatibility
@@ -54,6 +60,7 @@ export const taskTypeValues: Record<string, string> = {
 </context>`,
 
   Review: `<task-title>Code review feedback</task-title>
+
 <context>
 - Check design patterns
 - Verify error handling
@@ -63,6 +70,7 @@ export const taskTypeValues: Record<string, string> = {
 </context>`,
 
   Question: `<task-title>Provide technical guidance</task-title>
+
 <context>
 - Compare approaches
 - Explain trade-offs
@@ -72,6 +80,7 @@ export const taskTypeValues: Record<string, string> = {
 </context>`,
 
   Doc: `<task-title>Update documentation</task-title>
+
 <context>
 - Maintain accuracy
 - Improve clarity
@@ -81,6 +90,7 @@ export const taskTypeValues: Record<string, string> = {
 </context>`,
 
   Test: `<task-title>Improve test coverage</task-title>
+
 <context>
 - Add missing tests
 - Cover edge cases
@@ -90,6 +100,7 @@ export const taskTypeValues: Record<string, string> = {
 </context>`,
 
   Architecture: `<task-title>Design system architecture</task-title>
+
 <context>
 - Consider scalability
 - Plan for maintenance
@@ -99,6 +110,7 @@ export const taskTypeValues: Record<string, string> = {
 </context>`,
 
   Research: `<task-title>Technical research</task-title>
+
 <context>
 - Analyze options
 - Compare solutions
@@ -108,6 +120,7 @@ export const taskTypeValues: Record<string, string> = {
 </context>`,
 
   Blog: `<task-title>Create technical content</task-title>
+
 <context>
 - Target audience level
 - Use clear examples
@@ -117,6 +130,7 @@ export const taskTypeValues: Record<string, string> = {
 </context>`,
 
   Others: `<task-title>Handle custom request</task-title>
+
 <context>
 - Clarify requirements
 - Propose solutions
@@ -127,157 +141,187 @@ export const taskTypeValues: Record<string, string> = {
 };
 
 export const customInstructionValues: Record<string, string> = {
-  Default: `<output format>
+  Default: `<output-format>
 - Production-grade code
 - Essential comments
 - Clear type annotations
 - Error handling
 - Usage examples
-</output>
+</output-format>
 
-<reasoning process>
+<reasoning-process>
 - Analyze requirements
 - Consider alternatives
 - Validate assumptions
 - Check security
 - Handle edge cases
-</reasoning process>`,
+</reasoning-process>`,
 
-  "React/Next.js": `<technical stack>
+  "React/Next.js": `<technical-stack>
 - React 18+/Next.js 14+
 - TypeScript 5+
 - Tailwind CSS
 - Component libraries
-</technical stack>
+</technical-stack>
 
-<development constraints>
+<development-constraints>
 - Component architecture
 - Client/server split
 - Performance patterns
 - Accessibility
-</development constraints>
+</development-constraints>
 
-<output requirements>
+<output-requirements>
 - Reusable components
 - State management
 - Error boundaries
 - Loading states
 - Responsive design
-</output requirements>`,
+</output-requirements>`,
 
-  "Node.js API": `<technical stack>
+  "Node.js API": `<technical-stack>
 - Node.js LTS
 - TypeScript 5+
 - REST/GraphQL
 - Database ORM
-</technical stack>
+</technical-stack>
 
-<development constraints>
+<development-constraints>
 - API versioning
 - Request validation
 - Error handling
 - Performance
-</development constraints>
+</development-constraints>
 
-<output requirements>
+<output-requirements>
 - RESTful endpoints
 - Input validation
 - Error responses
 - API documentation
 - Security headers
-</output requirements>`,
+</output-requirements>`,
 
-  Database: `<technical requirements>
+  Database: `<technical-requirements>
 - SQL standards
 - Index optimization
 - Transaction safety
 - Data integrity
 - Query performance
-</technical requirements>
+</technical-requirements>
 
-<implementation constraints>
+<implementation-constraints>
 - Schema design
 - Query optimization
 - Migration safety
 - Backup strategy
-</implementation constraints>
+</implementation-constraints>
 
-<output format>
+<output-format>
 - Clean queries
 - Index definitions
 - Performance notes
 - Migration scripts
 - Rollback plans
-</output format>`,
+</output-format>`,
 
-  "Cloud/DevOps": `<infrastructure requirements>
+  "Cloud/DevOps": `<infrastructure-requirements>
 - Cloud provider best practices
 - Infrastructure as Code
 - Security compliance
 - Monitoring setup
-</infrastructure requirements>
+</infrastructure-requirements>
 
-<deployment constraints>
+<deployment-constraints>
 - High availability
 - Disaster recovery
 - Cost optimization
 - Performance metrics
-</deployment constraints>
+</deployment-constraints>
 
-<output requirements>
+<output-requirements>
 - IaC templates
 - Documentation
 - Monitoring config
 - Security controls
 - Backup procedures
-</output requirements>`,
+</output-requirements>`,
 
-  Mobile: `<technical stack>
+  Mobile: `<technical-stack>
 - React Native/Flutter
 - Native APIs
 - State management
 - Network handling
-</technical stack>
+</technical-stack>
 
-<development constraints>
+<development-constraints>
 - Platform specifics
 - Performance
 - Offline support
 - Battery usage
-</development constraints>
+</development-constraints>
 
-<output requirements>
+<output-requirements>
 - Native features
 - Error handling
 - Loading states
 - Responsive UI
 - Platform builds
-</output requirements>`,
+</output-requirements>`,
 
-  Question: `<response format>
+  Question: `<response-format>
 - Clear explanation
 - Code examples
 - Best practices
 - Common pitfalls
 - Further reading
-</response format>
+</response-format>
 
-<depth level>
+<depth-level>
 - Fundamental concepts
 - Practical usage
 - Edge cases
 - Performance implications
 - Security considerations
-</depth level>
+</depth-level>
 
-<output requirements>
+<output-requirements>
 - Complete answers
 - Visual examples
 - Alternative approaches
 - Reference links
 - Follow-up steps
-</output requirements>`,
+</output-requirements>`,
 };
 
 export const taskTypes = Object.keys(taskTypeValues);
 export const customInstructionTypes = Object.keys(customInstructionValues);
+
+export const ignoreFileSuffixesData = [
+  ".env",
+  ".log",
+  ".gitignore",
+  ".json",
+  ".npmrc",
+  ".prettierrc",
+  ".eslintrc",
+  ".babelrc",
+  ".pyc",
+  ".pyo",
+  ".pyd",
+  ".class",
+];
+
+export const ignoreFoldersData = [
+  ".git/",
+  ".svn/",
+  ".vscode/",
+  ".idea/",
+  "node_modules/",
+  "venv/",
+  ".venv/",
+  "build/",
+  "dist/",
+  "out/",
+  ".next/",
+  "coverage/",
+];
