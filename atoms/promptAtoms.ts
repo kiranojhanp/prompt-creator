@@ -1,3 +1,4 @@
+import { MiniDb } from "jotai-minidb";
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import {
@@ -8,8 +9,17 @@ import {
 } from "./data";
 import type { FileType } from "@/types";
 
-export const filesAtom = atom<FileType[]>([]);
-export const selectedFilesAtom = atom<string[]>([]);
+// Create a MiniDb instance to persist files in IndexedDB.
+// We initialize the store with an empty array for the key "files".
+const filesDb = new MiniDb<FileType[]>({
+  name: "prompt-generator-selected-files",
+  initialData: { files: [] },
+});
+
+// Persist the files under the "files" key.
+export const filesAtom = filesDb.item("files");
+
+export const selectedFilesAtom = atomWithStorage<string[]>("selectedFiles", []);
 export const taskTypeAtom = atomWithStorage("taskType", "");
 export const customInstructionsAtom = atomWithStorage("customInstructions", "");
 export const rawPromptAtom = atomWithStorage<string>("rawPrompt", "");
@@ -43,11 +53,12 @@ export const finalPromptAtom = atom((get) => {
     .join("\n\n")
     .trim();
 
-  // Add code for each selected file
-  const selectedFilesList = files.filter((file) =>
+  // Append content for each selected file.
+  const selectedFilesList = files?.filter((file) =>
     selectedFiles.includes(file.name)
   );
-  if (selectedFilesList.length > 0) {
+
+  if (selectedFilesList && selectedFilesList.length > 0) {
     selectedFilesList.forEach((file) => {
       generatedPrompt += `\n\n${file.name}\n\`\`\`${file.extension}\n${file.content}\n\`\`\``;
     });

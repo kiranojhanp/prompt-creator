@@ -105,7 +105,9 @@ const FilePanel = () => {
           };
         })
       );
-      const updatedFiles = [...files, ...newFiles];
+
+      const previousFiles = files ?? [];
+      const updatedFiles = [...previousFiles, ...newFiles];
       setFiles(updatedFiles);
       calculateTotalLOC(updatedFiles, selectedFiles);
       setFilesToImport([]);
@@ -129,7 +131,9 @@ const FilePanel = () => {
       ? selectedFiles.filter((f) => f !== file.name)
       : [...selectedFiles, file.name];
     setSelectedFiles(newSelection);
-    calculateTotalLOC(files, newSelection);
+
+    const previousFiles = files ?? [];
+    calculateTotalLOC(previousFiles, newSelection);
   };
 
   // Setup dropzone; using noClick to prevent clicks inside from triggering the file dialog
@@ -245,7 +249,7 @@ const FilePanel = () => {
         >
           <input {...getInputProps()} />
 
-          {files.length > 0 ? (
+          {files && files.length > 0 ? (
             <>
               <ul className="divide-y divide-gray-800">
                 {files.map((file, idx) => (
