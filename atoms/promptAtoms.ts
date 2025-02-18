@@ -24,7 +24,7 @@ const filesDb = (
 
 // Persist the files under the "files" key.
 export const filesAtom = (
-  typeof window !== "undefined" ? filesDb.item("files") : atom([])
+  typeof window !== "undefined" ? filesDb.item("files") : atom<FileType[]>([])
 )!;
 
 export const selectedFilesAtom = atomWithStorage<string[]>("selectedFiles", []);

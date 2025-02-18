@@ -3,7 +3,7 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { useAtom } from "jotai";
 import { useDropzone } from "react-dropzone";
-import { ChevronDown, FileText, Folder, Upload } from "lucide-react";
+import { ChevronDown, FileText, Folder, Trash2, Upload } from "lucide-react";
 import {
   filesAtom,
   selectedFilesAtom,
@@ -108,6 +108,7 @@ const FilePanel = () => {
 
       const previousFiles = files ?? [];
       const updatedFiles = [...previousFiles, ...newFiles];
+      //@ts-ignore
       setFiles(updatedFiles);
       calculateTotalLOC(updatedFiles, selectedFiles);
       setFilesToImport([]);
@@ -115,6 +116,23 @@ const FilePanel = () => {
     } catch (error) {
       setUploadError("Error importing files. Please try again.");
     }
+  };
+
+  const removeFile = (fileName: string) => {
+    const updatedFiles = files?.filter((file) => file.name !== fileName);
+    if (updatedFiles) {
+      //@ts-ignore
+      setFiles(updatedFiles);
+      setSelectedFiles(selectedFiles.filter((name) => name !== fileName));
+      calculateTotalLOC(updatedFiles, selectedFiles);
+    }
+  };
+
+  const removeAllFiles = () => {
+    //@ts-ignore
+    setFiles([]);
+    setSelectedFiles([]);
+    setTotalLOC(0);
   };
 
   // Recalculate total LOC based on selected files
@@ -231,7 +249,12 @@ const FilePanel = () => {
 
       {/* Code Context & File Upload Area */}
       <div className="flex-grow flex flex-col overflow-hidden">
-        <h2 className="text-lg mb-2">Code Context</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg">Code Context</h2>
+          <Button variant="ghost" onClick={removeAllFiles}>
+            <Trash2 size={16} className="mr-2" /> Remove all
+          </Button>
+        </div>
 
         {uploadError && (
           <Alert variant="destructive" className="mb-4">
@@ -269,6 +292,13 @@ const FilePanel = () => {
                     <span className="text-gray-400 text-xs">
                       {file.loc} LOC
                     </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => removeFile(file.name)}
+                    >
+                      <Trash2 size={16} />
+                    </Button>
                   </li>
                 ))}
               </ul>
