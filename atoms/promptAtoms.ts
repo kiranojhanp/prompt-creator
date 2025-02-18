@@ -9,15 +9,23 @@ import {
 } from "./data";
 import type { FileType } from "@/types";
 
+const db = (typeof window !== "undefined" ? new MiniDb() : undefined)!;
+
 // Create a MiniDb instance to persist files in IndexedDB.
 // We initialize the store with an empty array for the key "files".
-const filesDb = new MiniDb<FileType[]>({
-  name: "prompt-generator-selected-files",
-  initialData: { files: [] },
-});
+const filesDb = (
+  typeof window !== "undefined"
+    ? new MiniDb<FileType[]>({
+        name: "prompt-generator-selected-files",
+        initialData: { files: [] },
+      })
+    : undefined
+)!;
 
 // Persist the files under the "files" key.
-export const filesAtom = filesDb.item("files");
+export const filesAtom = (
+  typeof window !== "undefined" ? filesDb.item("files") : atom([])
+)!;
 
 export const selectedFilesAtom = atomWithStorage<string[]>("selectedFiles", []);
 export const taskTypeAtom = atomWithStorage("taskType", "");
